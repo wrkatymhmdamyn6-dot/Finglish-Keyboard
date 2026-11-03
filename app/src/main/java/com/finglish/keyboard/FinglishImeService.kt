@@ -24,6 +24,7 @@ class FinglishImeService : InputMethodService() {
     private lateinit var root: LinearLayout
     private lateinit var keysArea: LinearLayout
     private lateinit var clipboardArea: LinearLayout
+    private lateinit var finglishPreview: TextView
     private val history = mutableListOf<String>()
     private val bg = Color.rgb(25, 25, 31)
     private val keyBg = Color.rgb(52, 49, 59)
@@ -60,6 +61,31 @@ class FinglishImeService : InputMethodService() {
         toolbar.addView(tool("⌫", "پاک کردن") { deleteOne() })
         toolbar.addView(tool("↵", "اینتر") { sendEnter() })
         root.addView(toolbar, LinearLayout.LayoutParams(-1, dp(42)))
+        val previewBar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = rounded(keyBg, 9)
+            setPadding(dp(9), 0, dp(9), 0)
+        }
+        previewBar.addView(TextView(this).apply {
+            text = "فینگلیش:"
+            textSize = 12f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(pink)
+        })
+        finglishPreview = TextView(this).apply {
+            text = " "
+            textSize = 13f
+            setTextColor(white)
+            gravity = Gravity.CENTER_VERTICAL
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            setPadding(dp(8), 0, 0, 0)
+        }
+        previewBar.addView(finglishPreview, LinearLayout.LayoutParams(0, -1, 1f))
+        root.addView(previewBar, LinearLayout.LayoutParams(-1, dp(30)).apply {
+            setMargins(0, dp(3), 0, dp(3))
+        })
         clipboardArea = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         keysArea = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(clipboardArea, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -71,7 +97,13 @@ class FinglishImeService : InputMethodService() {
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         composing = ""
+        updateFinglishPreview()
         rememberClipboard()
+    }
+
+    private fun updateFinglishPreview() {
+        if (!::finglishPreview.isInitialized) return
+        finglishPreview.text = if (composing.isBlank()) "متن فینگلیش اینجا نمایش داده می‌شود" else Transliterator.toFinglish(composing)
     }
 
     private fun renderContent() {
@@ -236,18 +268,21 @@ class FinglishImeService : InputMethodService() {
         if (!finglishMode) {
             ic.commitText(value, 1)
             composing += value
+            updateFinglishPreview()
             return
         }
         if (value == " " || value == "\n" || value in listOf(".", ",", "!", "?", "،", "؛", "؟")) {
             if (composing.isNotEmpty()) {
                 ic.commitText(Transliterator.toFinglish(composing), 1)
                 composing = ""
+                updateFinglishPreview()
             }
             ic.commitText(value, 1)
             return
         }
         composing += value
         ic.setComposingText(Transliterator.toFinglish(composing), 1)
+        updateFinglishPreview()
     }
 
     private fun deleteOne() {
@@ -256,9 +291,11 @@ class FinglishImeService : InputMethodService() {
             composing = composing.dropLast(1)
             if (composing.isEmpty()) ic.setComposingText("", 1)
             else ic.setComposingText(Transliterator.toFinglish(composing), 1)
+            updateFinglishPreview()
         } else {
             ic.deleteSurroundingText(1, 0)
             if (composing.isNotEmpty()) composing = composing.dropLast(1)
+            updateFinglishPreview()
         }
     }
 
