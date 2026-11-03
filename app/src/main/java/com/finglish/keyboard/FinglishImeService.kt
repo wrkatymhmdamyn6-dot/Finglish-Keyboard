@@ -18,6 +18,7 @@ import android.widget.TextView
 class FinglishImeService : InputMethodService() {
     private var composing = ""
     private var english = false
+    private var finglishMode = false
     private var symbols = false
     private var clipboardPage = false
     private lateinit var root: LinearLayout
@@ -202,8 +203,18 @@ class FinglishImeService : InputMethodService() {
         bottom.addView(actionKey(if (symbols) "ABC" else "?123", 1.1f) {
             symbols = !symbols; renderContent()
         })
-        bottom.addView(actionKey("فینگلیش", 1.2f) {
-            english = !english; symbols = false; renderContent()
+        bottom.addView(actionKey(if (finglishMode) "فینگلیش ✓" else "فینگلیش", 1.2f) {
+            if (finglishMode) {
+                if (composing.isNotEmpty()) currentInputConnection?.commitText(Transliterator.toFinglish(composing), 1)
+                composing = ""
+                currentInputConnection?.finishComposingText()
+                finglishMode = false
+            } else {
+                finglishMode = true
+                english = false
+                symbols = false
+            }
+            renderContent()
         })
         bottom.addView(actionKey("🌐", .8f) { requestShowSelf(0) })
         bottom.addView(actionKey("فاصله", 3.2f) { commitText(" ") })
@@ -221,13 +232,34 @@ class FinglishImeService : InputMethodService() {
     }
 
     private fun commitText(value: String) {
-        currentInputConnection?.commitText(value, 1)
+        val ic = currentInputConnection ?: return
+        if (!finglishMode) {
+            ic.commitText(value, 1)
+            composing += value
+            return
+        }
+        if (value == " " || value == "\n" || value in listOf(".", ",", "!", "?", "،", "؛", "؟")) {
+            if (composing.isNotEmpty()) {
+                ic.commitText(Transliterator.toFinglish(composing), 1)
+                composing = ""
+            }
+            ic.commitText(value, 1)
+            return
+        }
         composing += value
+        ic.setComposingText(Transliterator.toFinglish(composing), 1)
     }
 
     private fun deleteOne() {
-        currentInputConnection?.deleteSurroundingText(1, 0)
-        if (composing.isNotEmpty()) composing = composing.dropLast(1)
+        val ic = currentInputConnection ?: return
+        if (finglishMode && composing.isNotEmpty()) {
+            composing = composing.dropLast(1)
+            if (composing.isEmpty()) ic.setComposingText("", 1)
+            else ic.setComposingText(Transliterator.toFinglish(composing), 1)
+        } else {
+            ic.deleteSurroundingText(1, 0)
+            if (composing.isNotEmpty()) composing = composing.dropLast(1)
+        }
     }
 
     private fun sendEnter() {
