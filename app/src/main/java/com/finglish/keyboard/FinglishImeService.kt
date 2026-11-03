@@ -34,8 +34,8 @@ class FinglishImeService : InputMethodService() {
  private fun handleKey(key:String) { val ic:InputConnection=currentInputConnection ?: return
   when(key) {
    "⌫" -> { if(composing.isNotEmpty()) { composing=composing.dropLast(1); if(composing.isEmpty()) ic.commitText("",1) else ic.setComposingText(composing,1) } else ic.deleteSurroundingText(1,0); updateSuggestion() }
-   "فاصله" -> { ic.commitText(" ",1); composing=""; updateSuggestion() }
-   "↵" -> { ic.commitText("\n",1); composing=""; updateSuggestion() }
+   "فاصله" -> { ic.commitText(composing + " ",1); composing=""; updateSuggestion() }
+   "↵" -> { ic.commitText(composing + "\n",1); composing=""; updateSuggestion() }
    else -> { composing+=key; ic.setComposingText(composing,1); updateSuggestion() }
   }
  }
