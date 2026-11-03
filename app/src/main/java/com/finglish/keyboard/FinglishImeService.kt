@@ -21,6 +21,8 @@ class FinglishImeService : InputMethodService() {
     private var finglishMode = false
     private var symbols = false
     private var clipboardPage = false
+    private var toolsPage = false
+    private lateinit var toolsArea: LinearLayout
     private lateinit var root: LinearLayout
     private lateinit var keysArea: LinearLayout
     private lateinit var clipboardArea: LinearLayout
@@ -54,13 +56,14 @@ class FinglishImeService : InputMethodService() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
         }
-        toolbar.addView(tool("☷", "کلیپ‌بورد") { clipboardPage = !clipboardPage; renderContent() })
-        toolbar.addView(tool(if (english) "فارسی" else "EN", "تغییر زبان") {
-            english = !english; symbols = false; renderContent()
-        })
-        toolbar.addView(tool("⌫", "پاک کردن") { deleteOne() })
-        toolbar.addView(tool("↵", "اینتر") { sendEnter() })
-        root.addView(toolbar, LinearLayout.LayoutParams(-1, dp(42)))
+        toolbar.addView(tool("⚙", "تنظیمات و ابزارها") { toolsPage = !toolsPage; renderContent() })
+        root.addView(toolbar, LinearLayout.LayoutParams(-1, dp(38)))
+        toolsArea = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; visibility = View.GONE }
+        toolsArea.addView(tool("☷", "کلیپ‌بورد") { clipboardPage = !clipboardPage; toolsPage = false; renderContent() })
+        toolsArea.addView(tool(if (english) "فارسی" else "EN", "تغییر زبان") { english = !english; symbols = false; toolsPage = false; renderContent() })
+        toolsArea.addView(tool("⌫", "پاک کردن") { deleteOne() })
+        toolsArea.addView(tool("↵", "اینتر") { sendEnter() })
+        root.addView(toolsArea, LinearLayout.LayoutParams(-1, dp(42)))
         val previewBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -75,7 +78,7 @@ class FinglishImeService : InputMethodService() {
         })
         finglishPreview = TextView(this).apply {
             text = " "
-            textSize = 13f
+            textSize = 18f
             setTextColor(white)
             gravity = Gravity.CENTER_VERTICAL
             maxLines = 1
@@ -83,9 +86,8 @@ class FinglishImeService : InputMethodService() {
             setPadding(dp(8), 0, 0, 0)
         }
         previewBar.addView(finglishPreview, LinearLayout.LayoutParams(0, -1, 1f))
-        root.addView(previewBar, LinearLayout.LayoutParams(-1, dp(30)).apply {
-            setMargins(0, dp(3), 0, dp(3))
-        })
+        previewBar.visibility = View.GONE
+        root.addView(previewBar, LinearLayout.LayoutParams(-1, dp(34)).apply { setMargins(0, dp(3), 0, dp(3)) })
         clipboardArea = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         keysArea = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(clipboardArea, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -103,16 +105,33 @@ class FinglishImeService : InputMethodService() {
 
     private fun updateFinglishPreview() {
         if (!::finglishPreview.isInitialized) return
-        finglishPreview.text = if (composing.isBlank()) "متن فارسی اینجا نمایش داده می‌شود" else composing
+        finglishPreview.text = composing
+        (finglishPreview.parent as? View)?.visibility = if (finglishMode && !clipboardPage) View.VISIBLE else View.GONE
     }
 
     private fun renderContent() {
         if (!::root.isInitialized) return
         clipboardArea.removeAllViews()
         keysArea.removeAllViews()
-        clipboardArea.visibility = if (clipboardPage) View.VISIBLE else View.GONE
-        keysArea.visibility = if (clipboardPage) View.GONE else View.VISIBLE
-        if (clipboardPage) renderClipboard() else renderKeys()
+        clipboardArea.visibility = if (clipboardPage || toolsPage) View.VISIBLE else View.GONE
+        keysArea.visibility = if (clipboardPage || toolsPage) View.GONE else View.VISIBLE
+        toolsArea.visibility = if (toolsPage && !clipboardPage) View.VISIBLE else View.GONE
+        if (clipboardPage) renderClipboard() else if (toolsPage) renderToolsSettings() else renderKeys()
+        updateFinglishPreview()
+    }
+
+    private fun renderToolsSettings() {
+        clipboardArea.addView(TextView(this).apply {
+            text = "تنظیمات و ابزارها"; textSize = 17f; setTextColor(pink)
+            gravity = Gravity.CENTER; typeface = Typeface.DEFAULT_BOLD; setPadding(0, dp(8), 0, dp(8))
+        })
+        clipboardArea.addView(TextView(this).apply {
+            text = "چهار ابزار در نوار بالای تنظیمات قرار دارند."
+            textSize = 14f; setTextColor(white); gravity = Gravity.CENTER
+            setPadding(dp(10), dp(12), dp(10), dp(12))
+        })
+        clipboardArea.addView(tool("بازگشت به صفحه‌کلید", "بستن تنظیمات") { toolsPage = false; renderContent() },
+            LinearLayout.LayoutParams(-1, dp(42)))
     }
 
     private fun renderClipboard() {
@@ -207,6 +226,18 @@ class FinglishImeService : InputMethodService() {
             listOf("ش","س","ی","ب","ل","ا","ت","ن","م","ک","گ"),
             listOf("ظ","ط","ز","ر","ذ","د","پ","و","چ","⌫")
         )
+        if (!symbols) {
+            val numberRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+            listOf("1","2","3","4","5","6","7","8","9","0").forEach { digit ->
+                val key = Button(this).apply {
+                    text = digit; isAllCaps = false; textSize = 21f; setTextColor(white)
+                    background = rounded(keyBg, 9); setPadding(0, 0, 0, 0)
+                    setOnClickListener { commitText(digit) }
+                }
+                numberRow.addView(key, LinearLayout.LayoutParams(0, dp(42), 1f).apply { setMargins(dp(2), dp(2), dp(2), dp(2)) })
+            }
+            keysArea.addView(numberRow)
+        }
         rows.forEach { labels ->
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -216,7 +247,7 @@ class FinglishImeService : InputMethodService() {
                 val b = Button(this).apply {
                     text = label
                     isAllCaps = false
-                    textSize = if (label.length > 1) 14f else 19f
+                    textSize = if (label.length > 1) 16f else 22f
                     setTextColor(white)
                     background = rounded(if (label == "⌫") pink else keyBg, 9)
                     setPadding(0, 0, 0, 0)
