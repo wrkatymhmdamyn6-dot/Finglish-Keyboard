@@ -164,7 +164,7 @@ class FinglishImeService : InputMethodService() {
         val rows = if (symbols) listOf(
             listOf("1","2","3","4","5","6","7","8","9","0"),
             listOf("@","#","$","%","&","-","+","(",")","/"),
-            listOf("!","?","،","؛","'","\\"","_",".","،")
+            listOf("!", "?", ",", ";", "'", "_", ".", "/")
         ) else if (english) listOf(
             listOf("q","w","e","r","t","y","u","i","o","p"),
             listOf("a","s","d","f","g","h","j","k","l"),
