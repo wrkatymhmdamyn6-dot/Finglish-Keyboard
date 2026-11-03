@@ -56,6 +56,9 @@ class FinglishImeService : InputMethodService() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
         }
+        toolbar.addView(tool(if (english) "فارسی" else "EN", "تغییر زبان کیبورد") {
+            english = !english; symbols = false; finglishMode = false; toolsPage = false; renderContent()
+        })
         toolbar.addView(tool("⚙", "تنظیمات و ابزارها") { toolsPage = !toolsPage; renderContent() })
         root.addView(toolbar, LinearLayout.LayoutParams(-1, dp(38)))
         toolsArea = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; visibility = View.GONE }
@@ -226,19 +229,7 @@ class FinglishImeService : InputMethodService() {
             listOf("ش","س","ی","ب","ل","ا","ت","ن","م","ک","گ"),
             listOf("ظ","ط","ز","ر","ذ","د","پ","و","چ","⌫")
         )
-        if (!symbols) {
-            val numberRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
-            listOf("1","2","3","4","5","6","7","8","9","0").forEach { digit ->
-                val key = Button(this).apply {
-                    text = digit; isAllCaps = false; textSize = 21f; setTextColor(white)
-                    background = rounded(keyBg, 9); setPadding(0, 0, 0, 0)
-                    setOnClickListener { commitText(digit) }
-                }
-                numberRow.addView(key, LinearLayout.LayoutParams(0, dp(42), 1f).apply { setMargins(dp(2), dp(2), dp(2), dp(2)) })
-            }
-            keysArea.addView(numberRow)
-        }
-        rows.forEach { labels ->
+         rows.forEach { labels ->
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER
@@ -263,9 +254,7 @@ class FinglishImeService : InputMethodService() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
         }
-        bottom.addView(actionKey(if (symbols) "ABC" else "?123", 1.1f) {
-            symbols = !symbols; renderContent()
-        })
+        bottom.addView(actionKey("؟", 1.1f) { commitText("؟") })
         bottom.addView(actionKey(if (finglishMode) "فینگلیش ✓" else "فینگلیش", 1.2f) {
             if (finglishMode) {
                 if (composing.isNotEmpty()) currentInputConnection?.commitText(Transliterator.toFinglish(composing), 1)
@@ -279,7 +268,7 @@ class FinglishImeService : InputMethodService() {
             }
             renderContent()
         })
-        bottom.addView(actionKey("🌐", .8f) { requestShowSelf(0) })
+        bottom.addView(actionKey("۱۲۳", .8f) { symbols = !symbols; renderContent() })
         bottom.addView(actionKey("فاصله", 3.2f) { commitText(" ") })
         bottom.addView(actionKey("،", .8f) { commitText("،") })
         bottom.addView(actionKey("↵", 1f) { sendEnter() })
