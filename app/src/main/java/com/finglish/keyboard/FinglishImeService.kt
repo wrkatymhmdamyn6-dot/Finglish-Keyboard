@@ -103,7 +103,7 @@ class FinglishImeService : InputMethodService() {
 
     private fun updateFinglishPreview() {
         if (!::finglishPreview.isInitialized) return
-        finglishPreview.text = if (composing.isBlank()) "متن فینگلیش اینجا نمایش داده می‌شود" else Transliterator.toFinglish(composing)
+        finglishPreview.text = if (composing.isBlank()) "متن فارسی اینجا نمایش داده می‌شود" else composing
     }
 
     private fun renderContent() {
