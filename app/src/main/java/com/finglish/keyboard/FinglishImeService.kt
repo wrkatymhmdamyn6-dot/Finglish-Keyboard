@@ -7,6 +7,8 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.inputmethodservice.InputMethodService
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -19,6 +21,9 @@ class FinglishImeService : InputMethodService() {
     private var composing = ""
     private var english = false
     private var finglishMode = false
+    private var finglishTapPending = false
+    private val finglishTapHandler = Handler(Looper.getMainLooper())
+    private val finglishTapTimeout = Runnable { finglishTapPending = false; renderContent() }
     private var capitalizeNextFinglish = true
     private var symbols = false
     private var clipboardPage = false
@@ -258,18 +263,26 @@ class FinglishImeService : InputMethodService() {
         }
         bottom.addView(actionKey("؟", 1.1f) { commitText("؟") })
         bottom.addView(actionKey(if (finglishMode) "فینگلیش ✓" else "فینگلیش", 1.2f) {
-            if (finglishMode) {
-                if (composing.isNotEmpty()) currentInputConnection?.commitText(Transliterator.toFinglish(composing), 1)
-                composing = ""
-                currentInputConnection?.finishComposingText()
-                finglishMode = false
-            } else {
+            if (finglishTapPending) {
+                finglishTapHandler.removeCallbacks(finglishTapTimeout)
+                finglishTapPending = false
                 finglishMode = true
                 capitalizeNextFinglish = true
                 english = false
                 symbols = false
+                renderContent()
+            } else {
+                if (finglishMode) {
+                    if (composing.isNotEmpty()) currentInputConnection?.commitText(Transliterator.toFinglish(composing), 1)
+                    composing = ""
+                    currentInputConnection?.finishComposingText()
+                }
+                finglishMode = false
+                finglishTapPending = true
+                finglishTapHandler.postDelayed(finglishTapTimeout, 300L)
+                updateFinglishPreview()
+                renderContent()
             }
-            renderContent()
         })
         bottom.addView(actionKey("۱۲۳", .8f, pink) { symbols = !symbols; renderContent() })
         bottom.addView(actionKey("فاصله", 3.2f) { commitText(" ") })
