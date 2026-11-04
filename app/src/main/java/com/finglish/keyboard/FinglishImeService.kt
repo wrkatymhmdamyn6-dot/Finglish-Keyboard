@@ -294,13 +294,7 @@ class FinglishImeService : InputMethodService() {
             updateFinglishPreview()
             return
         }
-        if (value.length == 1 && value[0] in 'a'..'z' && capitalizeNextFinglish) {
-            composing += value.uppercase()
-            capitalizeNextFinglish = false
-            ic.setComposingText(Transliterator.toFinglish(composing), 1)
-            updateFinglishPreview()
-            return
-        }
+
         if (value == " " || value == "\n" || value in listOf(".", ",", ":", "!", "?", "،", "؛", "؟")) {
             if (composing.isNotEmpty()) {
                 ic.commitText(Transliterator.toFinglish(composing), 1)
@@ -317,8 +311,18 @@ class FinglishImeService : InputMethodService() {
             }
             return
         }
+
+        val startsNewWord = composing.isEmpty()
         composing += value
-        ic.setComposingText(Transliterator.toFinglish(composing), 1)
+        var converted = Transliterator.toFinglish(composing)
+        if (startsNewWord && capitalizeNextFinglish) {
+            val firstLetter = converted.indexOfFirst { it.isLetter() }
+            if (firstLetter >= 0) {
+                converted = converted.replaceRange(firstLetter, firstLetter + 1, converted[firstLetter].uppercaseChar().toString())
+                capitalizeNextFinglish = false
+            }
+        }
+        ic.setComposingText(converted, 1)
         updateFinglishPreview()
     }
 
