@@ -28,9 +28,9 @@ class FinglishImeService : InputMethodService() {
     private lateinit var clipboardArea: LinearLayout
     private lateinit var finglishPreview: TextView
     private val history = mutableListOf<String>()
-    private val bg = Color.rgb(25, 25, 31)
-    private val keyBg = Color.rgb(52, 49, 59)
-    private val pink = Color.rgb(244, 105, 157)
+    private val bg = Color.rgb(27, 26, 30)
+    private val keyBg = Color.rgb(49, 47, 51)
+    private val pink = Color.rgb(255, 174, 184)
     private val white = Color.WHITE
     private val clipboard by lazy { getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager }
     private val clipListener = ClipboardManager.OnPrimaryClipChangedListener { rememberClipboard() }
@@ -56,6 +56,7 @@ class FinglishImeService : InputMethodService() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
         }
+        toolbar.addView(tool("☷", "کلیپ‌بورد") { clipboardPage = !clipboardPage; toolsPage = false; renderContent() })
         toolbar.addView(tool(if (english) "فارسی" else "EN", "تغییر زبان کیبورد") {
             english = !english; symbols = false; finglishMode = false; toolsPage = false; renderContent()
         })
@@ -268,10 +269,10 @@ class FinglishImeService : InputMethodService() {
             }
             renderContent()
         })
-        bottom.addView(actionKey("۱۲۳", .8f) { symbols = !symbols; renderContent() })
+        bottom.addView(actionKey("۱۲۳", .8f, pink) { symbols = !symbols; renderContent() })
         bottom.addView(actionKey("فاصله", 3.2f) { commitText(" ") })
         bottom.addView(actionKey("،", .8f) { commitText("،") })
-        bottom.addView(actionKey("↵", 1f) { sendEnter() })
+        bottom.addView(actionKey("↵", 1f, pink) { sendEnter() })
         keysArea.addView(bottom)
     }
 
@@ -342,14 +343,14 @@ class FinglishImeService : InputMethodService() {
             }
         }
 
-    private fun actionKey(label: String, weight: Float, action: () -> Unit) =
+    private fun actionKey(label: String, weight: Float, color: Int? = null, action: () -> Unit) =
         TextView(this).apply {
             text = label
             textSize = 13f
             typeface = Typeface.DEFAULT_BOLD
-            setTextColor(if (label == "فینگلیش") bg else white)
+            setTextColor(if (label.startsWith("فینگلیش")) bg else white)
             gravity = Gravity.CENTER
-            background = rounded(if (label == "فینگلیش") pink else keyBg, 9)
+            background = rounded(color ?: if (label.startsWith("فینگلیش")) pink else keyBg, 9)
             setOnClickListener { action() }
             layoutParams = LinearLayout.LayoutParams(0, dp(43), weight).apply {
                 setMargins(dp(2), dp(2), dp(2), dp(2))
