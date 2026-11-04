@@ -282,9 +282,11 @@ class FinglishImeService : InputMethodService() {
             renderContent()
         })
         bottom.addView(actionKey("۱۲۳", .8f, pink) { symbols = !symbols; renderContent() })
-        bottom.addView(actionKey("فاصله", 3.2f) { commitText(" ") })
-        bottom.addView(actionKey("،", .8f) { commitText("،") })
-        bottom.addView(actionKey("↵", 1f, pink) { sendEnter() })
+        bottom.addView(actionKey("فاصله", 2.8f) { commitText(" ") })
+        bottom.addView(actionKey(".", .65f) { commitText(".") })
+        bottom.addView(actionKey(",", .65f) { commitText(",") })
+        bottom.addView(actionKey("،", .65f) { commitText("،") })
+        bottom.addView(actionKey("↵", .9f, pink) { sendEnter() })
         keysArea.addView(bottom)
     }
 
