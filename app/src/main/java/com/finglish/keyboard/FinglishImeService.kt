@@ -19,6 +19,7 @@ class FinglishImeService : InputMethodService() {
     private var composing = ""
     private var english = false
     private var finglishMode = false
+    private var capitalizeNextFinglish = true
     private var symbols = false
     private var clipboardPage = false
     private var toolsPage = false
@@ -220,7 +221,7 @@ class FinglishImeService : InputMethodService() {
         val rows = if (symbols) listOf(
             listOf("1","2","3","4","5","6","7","8","9","0"),
             listOf("@","#","$","%","&","-","+","(",")","/"),
-            listOf("!", "?", ",", ";", "'", "_", ".", "/")
+            listOf("!", "?", ",", ";", "'", "_", ".", ":")
         ) else if (english) listOf(
             listOf("q","w","e","r","t","y","u","i","o","p"),
             listOf("a","s","d","f","g","h","j","k","l"),
@@ -264,6 +265,7 @@ class FinglishImeService : InputMethodService() {
                 finglishMode = false
             } else {
                 finglishMode = true
+                capitalizeNextFinglish = true
                 english = false
                 symbols = false
             }
@@ -292,13 +294,27 @@ class FinglishImeService : InputMethodService() {
             updateFinglishPreview()
             return
         }
-        if (value == " " || value == "\n" || value in listOf(".", ",", "!", "?", "،", "؛", "؟")) {
+        if (value.length == 1 && value[0] in 'a'..'z' && capitalizeNextFinglish) {
+            composing += value.uppercase()
+            capitalizeNextFinglish = false
+            ic.setComposingText(Transliterator.toFinglish(composing), 1)
+            updateFinglishPreview()
+            return
+        }
+        if (value == " " || value == "\n" || value in listOf(".", ",", ":", "!", "?", "،", "؛", "؟")) {
             if (composing.isNotEmpty()) {
                 ic.commitText(Transliterator.toFinglish(composing), 1)
                 composing = ""
                 updateFinglishPreview()
             }
-            ic.commitText(value, 1)
+            if (value in listOf(".", ",", ":")) {
+                if (ic.getTextBeforeCursor(1, 0)?.toString() == " ") ic.deleteSurroundingText(1, 0)
+                ic.commitText(value + " ", 1)
+                capitalizeNextFinglish = value == "." || value == ":"
+            } else {
+                ic.commitText(value, 1)
+                if (value == "\n") capitalizeNextFinglish = true
+            }
             return
         }
         composing += value
