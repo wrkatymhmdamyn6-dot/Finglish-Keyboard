@@ -250,9 +250,10 @@ class FinglishImeService : InputMethodService() {
                     background = rounded(if (label == "⌫") pink else keyBg, 9)
                     setPadding(0, 0, 0, 0)
                     setOnClickListener { onKey(label) }
+                    if (label == "⌫") setOnLongClickListener { clearAllText(); true }
                 }
                 row.addView(b, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
-                    setMargins(dp(2), dp(3), dp(2), dp(3))
+                    setMargins(dp(2), dp(7), dp(2), dp(7))
                 })
             }
             keysArea.addView(row)
@@ -351,6 +352,14 @@ class FinglishImeService : InputMethodService() {
             if (composing.isNotEmpty()) composing = composing.dropLast(1)
             updateFinglishPreview()
         }
+    }
+
+    private fun clearAllText() {
+        val ic = currentInputConnection ?: return
+        ic.finishComposingText()
+        ic.deleteSurroundingText(Int.MAX_VALUE, Int.MAX_VALUE)
+        composing = ""
+        updateFinglishPreview()
     }
 
     private fun sendEnter() {
