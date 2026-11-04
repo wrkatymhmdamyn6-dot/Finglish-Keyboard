@@ -279,7 +279,7 @@ class FinglishImeService : InputMethodService() {
                 }
                 finglishMode = false
                 finglishTapPending = true
-                finglishTapHandler.postDelayed(finglishTapTimeout, 300L)
+                finglishTapHandler.postDelayed(finglishTapTimeout, 500L)
                 updateFinglishPreview()
                 renderContent()
             }
